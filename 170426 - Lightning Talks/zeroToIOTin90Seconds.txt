@@ -1,0 +1,80 @@
+references
+    https://mongoose-os.com/blog/secure-remote-device-management-with-mongoose-os-and-aws-iot-for-esp32-esp8266-ti-cc3200-stm32/
+    https://mongoose-os.com/video-tutorials.html
+
+demo 
+export BROKER=broker.hivemq.com
+export BROKER=test.mosquitto.org
+export IP=192.168.0.122
+    
+mos
+config is conf9.json
+
+look at index.html
+    edit and refresh
+
+look at api files
+    api_adc.js
+    api_gpio.js
+
+look at examples
+
+look at RPC API
+    call GPIO.Write 2 and 0
+
+mos ls
+mos call RPC.List
+mos call RPC.Describe '{"name": "GPIO.Write"}'
+
+mos --port ws://$IP/rpc ls
+mos --port ws://$IP/call RPC.List
+
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 ls
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call RPC.List
+
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call Sys.GetInfo
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call GPIO.Write '{"pin":"2","value":"0"}'
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call GPIO.Write '{"pin":"2","value":"1"}'
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 get index.html > index.html
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 put index.html
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call Sys.Reboot
+
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 get init.js > /tmp/a
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 put /tmp/a init.js
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call Sys.Reboot
+
+// adding 'Control' function to RPC
+load('api_rpc.js');
+GPIO.set_mode(led, GPIO.MODE_OUTPUT);
+RPC.addHandler('Control',function(args) {
+  GPIO.write(led,args.state);
+  print("Control ",args.state);
+  return true;
+});
+
+mos --port ws://$IP/rpc call RPC.List
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call RPC.List
+
+mos --port ws://$IP/rpc call Control '{"state":0}'
+mos --port mqtt://$BROKER:1883/esp8266_D51A63 call Control '{"state":'0'}'
+
+mos --port ws://$IP/rpc call OTA.Update '{"url": "https://mongoose-os.com/downloads/mos-esp8266.zip", "commit_timeout": 100}'
+mos --port ws://$IP/rpc call OTA.Commit
+
+
+
+pubsub
+    broker.hivemq.com
+    http://www.hivemq.com/demos/websocket-client/
+    subscribe to mOS/topic1/#
+    mosquitto_sub -h broker.hivemq.com -p 1883 -t mOS/topic1
+
+    pub
+    load button_mqtt.js
+    let pin=0; gpio0 is D3 on wemos
+    mosquitto_sub -h $BROKER -p 1883 -t mOS/topic1
+
+    sub
+    load mqtt_subscribe.js
+    mosquitto_pub -h $BROKER -p 1883 -t my/topic/123 -m "1266193804 32"
+
