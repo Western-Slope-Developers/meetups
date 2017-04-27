@@ -2,6 +2,10 @@ references
     https://mongoose-os.com/blog/secure-remote-device-management-with-mongoose-os-and-aws-iot-for-esp32-esp8266-ti-cc3200-stm32/
     https://mongoose-os.com/video-tutorials.html
 
+boards
+    https://www.wemos.cc/product/d1-mini.html
+    https://en.wikipedia.org/wiki/ESP32
+
 demo 
 export BROKER=broker.hivemq.com
 export BROKER=test.mosquitto.org
