@@ -2,9 +2,18 @@
 #include <WiFiUdp.h>
 #include <stdlib.h>
 
+
 int status = WL_IDLE_STATUS;
-const char* ssid = "zeeboo";  //  your network SSID (name)
-const char* pass = "zaralily";       // your network password
+
+#include "auth.h"
+
+/* 'auth' file has these lines
+  const char *ssid      = "????";
+  const char *password  = "????";
+
+  #define LOCATION        "????"
+
+*/
 
 const int UDP_PACKET_SIZE = 128;
 char udpInBuffer[UDP_PACKET_SIZE];
@@ -12,7 +21,7 @@ char udpOutBuffer[UDP_PACKET_SIZE];
 
 #define MILLIINTERVAL 10
 
-#define NAME "plate"
+#define LOCATION "plate"
 
 WiFiUDP Udp;
 IPAddress ipUdpMulti(239, 0, 0, 57);
@@ -28,7 +37,7 @@ unsigned valueADC;
 void setup()
 {
   Serial.begin(115200);
-  WiFi.begin(ssid, pass);
+  WiFi.begin(ssid, password);
   Serial.print("\n\nConnecting to ");
   Serial.print(ssid);
   int tries = 0;
@@ -61,7 +70,7 @@ void loopBroadcast()
     }
     char v[20];
     dtostrf(valueSIN,0,4,v);
-    sprintf(udpOutBuffer,"{\"type\":\"data\",\"name\":\"%s\",\"t\":%d,\"v\":%s,\"adc\":%d}",NAME,now,v,valueADC);
+    sprintf(udpOutBuffer,"{\"type\":\"data\",\"name\":\"%s\",\"t\":%d,\"v\":%s,\"adc\":%d}",LOCATION,now,v,valueADC);
 
     Udp.beginPacketMulticast(ipUdpMulti, ipUdpPort, WiFi.localIP());
     Udp.write(udpOutBuffer, strlen(udpOutBuffer));
