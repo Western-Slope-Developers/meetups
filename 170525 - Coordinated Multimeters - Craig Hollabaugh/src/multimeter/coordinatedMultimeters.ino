@@ -14,8 +14,6 @@ extern "C" {
 static uint32_t micros_at_last_overflow_tick;
 static uint32_t micros_overflow_count;
 
-
-
 int status = WL_IDLE_STATUS;
 
 #include "auth.h"
@@ -59,6 +57,7 @@ unsigned long ICACHE_RAM_ATTR millissync() {
   return c * 4294967 + m / 1000 + offsetMillis;
 }
 
+// see https://github.com/esp8266/Arduino/issues/3078
 void setup()
 {
   Serial.begin(115200);

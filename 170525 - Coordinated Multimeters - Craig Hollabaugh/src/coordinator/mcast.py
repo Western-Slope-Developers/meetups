@@ -14,10 +14,13 @@ MYGROUP_4 = '239.0.0.57'
 MYGROUP_6 = 'ff15:7079:7468:6f6e:6465:6d6f:6d63:6173'
 MYTTL = 1 # Increase to reach other networks
 
-import time
-import struct
-import socket
-import sys
+import time, struct, socket, sys, datetime, json
+
+def getTimestamp():
+     dt = datetime.datetime.now()
+     return (dt.hour * 3600000 + dt.minute * 60000 + dt.second * 1000 + dt.microsecond / 1000)
+
+
 
 def main():
     group = MYGROUP_6 if "-6" in sys.argv[1:] else MYGROUP_4
@@ -71,9 +74,14 @@ def receiver(group):
 
     # Loop, printing any data we receive
     while True:
-        data, sender = s.recvfrom(1500)
-        while data[-1:] == '\0': data = data[:-1] # Strip trailing \0's
-        print ("%.5f|%s|%d|%s"%(time.time(),sender[0],sender[1],data))
+        datastr, sender = s.recvfrom(1500)
+        ts = getTimestamp()
+        while datastr[-1:] == '\0': data = data[:-1] # Strip trailing \0's
+        data = json.loads(datastr)
+        try:
+            print ("%.5f|%s|%d|%s|%d|%d"%(time.time(),sender[0],sender[1],data,ts,ts-data['t']))
+        except:
+            print ("%.5f|%s|%d|%s"%(time.time(),sender[0],sender[1],data))
 
 if __name__ == '__main__':
     main()
