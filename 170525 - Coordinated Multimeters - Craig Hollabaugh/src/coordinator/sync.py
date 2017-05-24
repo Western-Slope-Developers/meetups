@@ -79,11 +79,14 @@ def txrx(message,members,timeout=2.0):
             break
     return None
 
+message = "{\"type\":\"quiet\",\"src\":\"coordinator\",\"value\":5000}";
+sent = tsocket.sendto(message, tmulticast_group)
+time.sleep(1.0)
 
 members = ['plate']
 timestamp = getTimestamp()
 print txrx({"type":"sync","src":"coordinator"},members,2.0)
-time.sleep(1.0)
+time.sleep(0.5)
 members = ['plate']
 print txrx({"type":"followup","src":"coordinator","timestamp":timestamp},members,2.0)
 
