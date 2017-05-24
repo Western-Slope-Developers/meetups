@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+      .chart { width: 100%; height: 400px; }
+    </style>
+  	<script type="text/javascript">
+    	window.onload = function() {
+        var charts = {};
+
+        var updateInterval = 100;
+    		var dataLength = 500; // ms
+        var baseTime = null;
+
+        var events = new EventSource('/messages');
+
+        events.onmessage = function(msg) {
+          var data = JSON.parse(msg.data);
+          if (data.type == 'data') {
+            onDataMessage(data);
+          }
+        };
+
+        function onNewNode(data) {
+          if (!baseTime) { baseTime = Date.now(); }
+          // create node; add to DOM
+          var div = document.createElement('div');
+          div.id = data.src;
+          div.className = "chart";
+          document.body.appendChild(div);
+          // add chart object to map
+          charts[data.src] = new CanvasJS.Chart(data.src, {
+            title: { text: "source: " + data.src },
+            data: [{
+              type: "line",
+              showInLegend: true,
+              dataPoints: []
+            }, {
+              type: "line",
+              showInLegend: true,
+              legendText: 'voltage',
+              dataPoints: []
+            }],
+            legend: {
+        			cursor: "pointer",
+        			itemclick: function (e) {
+        				if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+        					e.dataSeries.visible = false;
+        				} else {
+        					e.dataSeries.visible = true;
+        			}
+        			chart.render();
+        			}
+        		}
+          });
+          // chart for src is now created
+          onDataMessage(data);
+        };
+
+        function onDataMessage(data) {
+          // if source has chart, add to it
+          if (charts[data.src]) {
+            var chart_data = charts[data.src].data;
+            chart_data[0].dataPoints.push({
+              x: data.t,
+              y: data.v
+            });
+            chart_data[1].dataPoints.push({
+              x: data.t,
+              y: data.adc
+            });
+            if (chart_data[0].dataPoints.length > dataLength) {
+              chart_data[0].dataPoints.shift();
+            }
+            if (chart_data[1].dataPoints.length > dataLength) {
+              chart_data[1].dataPoints.shift();
+            }
+          }
+          // otherwise, create the chart
+          else {
+            onNewNode(data);
+          }
+        };
+
+        setInterval(function() {
+          // update all charts
+          Object.keys(charts).forEach(function(src) {
+            charts[src].render();
+          });
+        }, updateInterval);
+
+        document.addEventListener("keypress", function(e) {
+          console.log(e);
+        });
+
+    	}
+  	</script>
+  	<script type="text/javascript" src="/static/canvasjs.min.js"></script>
+  </head>
+  <body>
+  </body>
+</html>
