@@ -21,19 +21,17 @@ int status = WL_IDLE_STATUS;
 /* 'auth' file has these lines
   const char *ssid      = "????";
   const char *password  = "????";
-
-  #define LOCATION        "????"
-
 */
+
+#define LOCATION "screen"
+
 
 const int UDP_PACKET_SIZE = 128;
 char udpInBuffer[UDP_PACKET_SIZE];
 char udpOutBuffer[UDP_PACKET_SIZE];
 
 #define BROADCASTINTERVAL 10
-#define SYNCHOLDOFF 5000
-
-#define LOCATION "plate"
+#define QUIETHOLDOFF 5000
 
 WiFiUDP Udp;
 IPAddress ipUdpMulti(239, 0, 0, 57);
@@ -46,7 +44,7 @@ unsigned long now;
 float valueSIN;
 unsigned valueADC;
 
-uint32_t offsetMillis, syncMilli, delayMilli;
+uint32_t offsetMillis, syncMilli, delayMilli, timeoutQuiet;
 
 StaticJsonBuffer<200> jsonBuffer;
 
@@ -81,7 +79,7 @@ void setup()
 
 
 void getValues() {
-  valueSIN = sin(now / 100.0);
+  valueSIN = sin(now / 300.0);
   valueADC = analogRead(A0);
 }
 
@@ -95,22 +93,27 @@ void loopBroadcast()
         break;
       }
     }
-    char v[20];
-    dtostrf(valueSIN, 0, 4, v);
-    sprintf(udpOutBuffer, "{\"type\":\"data\",\"src\":\"%s\",\"t\":%d,\"v\":%s,\"adc\":%d}", LOCATION, now, v, valueADC);
 
-    Udp.beginPacketMulticast(ipUdpMulti, ipUdpPort, WiFi.localIP());
-    Udp.write(udpOutBuffer, strlen(udpOutBuffer));
-    Udp.endPacket();
+    if (millissync() > timeoutQuiet) {
+      char v[20];
+      dtostrf(valueSIN, 0, 4, v);
+      sprintf(udpOutBuffer, "{\"type\":\"data\",\"src\":\"%s\",\"t\":%d,\"v\":%s,\"adc\":%d}", LOCATION, now, v, valueADC);
+
+      Udp.beginPacketMulticast(ipUdpMulti, ipUdpPort, WiFi.localIP());
+      Udp.write(udpOutBuffer, strlen(udpOutBuffer));
+      Udp.endPacket();
+    }
   }
 }
 
 void processUdp() {
+  DynamicJsonBuffer jsonBuffer;
   JsonObject& message = jsonBuffer.parseObject(udpInBuffer);
   const char* dst = message["dst"];
   const char* src = message["src"];
   const char* type = message["type"];
   uint32_t timestamp = message["timestamp"];
+  int ivalue = message["value"];
   if (debug) {
     Serial.println(udpInBuffer);
     Serial.print(src);
@@ -119,11 +122,16 @@ void processUdp() {
     Serial.print(" ");
     Serial.println(timestamp);
   }
-  if (strcmp(type, "sync") == 0) {
-    syncMilli = millis();
+  if (strcmp(type, "quiet") == 0) {
+    timeoutQuiet = millissync() + ivalue;
     return;
   }
-
+  
+  if (strcmp(type, "sync") == 0) {
+    offsetMillis = 0;
+    syncMilli = millissync();
+    return;
+  }
   if (strcmp(type, "followup") == 0) {
     offsetMillis = (timestamp - syncMilli);
     delay(random(500));
@@ -136,7 +144,8 @@ void processUdp() {
   }
 
   if ((strcmp(type, "delayreply") == 0) && (strcmp(dst, LOCATION) == 0)) {
-    offsetMillis -= (timestamp - delayMilli) / 2.0;
+    offsetMillis += (timestamp - delayMilli) / 2.0;
+    timeoutQuiet = 0;
     return;
   }
 }
@@ -146,7 +155,7 @@ void loopIncomingProcess()
   int numBytes = Udp.parsePacket();
   if ( numBytes ) {
     if (debug) {
-      Serial.print(millis() / 1000);
+      Serial.print(millissync() / 1000);
       Serial.print(":Packet of ");
       Serial.print(numBytes);
       Serial.print(" received from ");
@@ -154,7 +163,6 @@ void loopIncomingProcess()
       Serial.print(":");
       Serial.println(Udp.remotePort());
     }
-
     Udp.read(udpInBuffer, numBytes);
 
     udpInBuffer[numBytes] = 0;
