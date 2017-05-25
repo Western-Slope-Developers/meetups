@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <ArduinoJson.h>
 
+#define LOCATION "grid"
+
+
 // expressif sdk include, also link
 extern "C" {
 #include "user_interface.h"
@@ -18,12 +21,11 @@ int status = WL_IDLE_STATUS;
 
 #include "auth.h"
 
-/* 'auth' file has these lines
+/* 'auth.h' file has these lines
   const char *ssid      = "????";
   const char *password  = "????";
 */
 
-#define LOCATION "screen"
 
 
 const int UDP_PACKET_SIZE = 128;
