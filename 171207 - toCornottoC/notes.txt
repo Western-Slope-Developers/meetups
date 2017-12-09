@@ -1,0 +1,142 @@
+Using ARM for all examples
+    outline
+    Simplified ARM Datapath - 5m
+http://slideplayer.com/slide/6030654/20/images/38/Internal+Organization+of+ARM.jpg
+        RAM, PC, Registers, ALU, discuss execution time in clock cycles
+        Fetch Execute Cycle
+        all instructions, data, etc are 32bit wide
+    Instruction Set - 2m
+        Show p4-2 of http://bear.ces.cwru.edu/eecs_382/ARM7-TDMI-manual-pt2.pdf
+http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0552a/BABFGBDD.html
+    Assembly - 3m
+
+
+    C - 10m
+        process
+            c > asm > opcode
+
+        compile main.c
+            int main(int argc, char **argv) {
+                return 0;
+            }
+        gcc main.c 
+        ./a.out
+        echo $?
+        file a.out
+
+        make simplest main.c, remove return, args
+
+        gcc -S main.c
+        look at main.s
+        gcc -S main.c -fverbose-asm
+        objdump -S --disassemble a.out > dump
+
+    
+Python - 10m 
+        process
+            py > pyc > c? > asm > opcode
+
+        show outside_fn.py
+            for i in range(10**7):
+                    i
+
+        show inside_fn.py
+            holla@dev[595]: cat inside_fn.py 
+            def loop():
+                    for i in range(10**7):
+                            i
+            loop()
+
+        time python outside_fn.py
+            6.2s
+        time python inside_fn.py
+            3.6s
+            why? 
+
+        python -m dis outside_fn.py
+        python -m dis inside_fn.py
+        https://docs.python.org/2/library/dis.html
+        https://hg.python.org/cpython/file/tip/Python/ceval.c#l1166
+
+           look for GET_ITER
+
+    Sort compares - 10m
+        cd src/c
+            gcc sort.c -o sort
+            time ./sort in.txt outa.txt 
+                # 17s
+            time sort in.txt > outb.txt 
+                # 0.09
+            diff outa.txt outb.txt
+        cd src/py
+            time python sort.py in.txt > outa.txt
+                0m0.221s
+            time python sort2.py in.txt > outa.txt
+                0m0.187s
+
+    So why learn c?
+
+The argument for learning C has such diverse justifications as:
+    1. You need to know how some existing code works and the documentation, such as it is, is inadequate.
+    2. You need to squeeze every ounce of performance out of a program and you choose to write portions of it in C.
+    3. You want to prove that you are a really gnarly programmer.
+    4. All you have is a C compiler and no other language is available.
+    5. You have a program written in several languages and you need C to provide the shims needed to handle the interface between them.
+    6. You need to do something that your interpreted language just can't do.
+    7. You need to talk directly to hardware. (Some assembly will probably also be required).
+    8. You have do learn C because of circumstances
+    9. No marshaling possible for comm if structs have same endianness
+   10. Casting pointers
+
+    0. Makes you a better person
+
+    Learning C tells you how a computer really works
+        memory allocation
+        garbage collection
+
+
+references
+
+c disassembly
+    https://www.youtube.com/watch?v=twxEVeDceGw
+
+
+
+
+
+python
+references
+    https://www.youtube.com/watch?v=GNPKBICTF2w
+    https://slidr.io/vakila/exploring-python-bytecode#36
+    
+    https://docs.python.org/2/library/dis.html
+    https://hg.python.org/cpython/file/tip/Python/ceval.c#l1358
+
+dis
+    python -m dis inside_fn.py
+
+def loop():
+    for i in range(10**8):
+        i
+loop()
+
+for i in range(10**8):
+    i
+
+def hello():
+    return "Hello WSD")
+
+import dis
+dis.dis(hello)
+
+print dis.opmap.keys()
+
+
+ham = 1
+eggs = 2
+spam = 0
+
+ham/eggs + ham/spam
+dis.dis() # looks at traceback
+
+
